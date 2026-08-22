@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nLearn Data Processor - Pro Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root { 
+            --primary: #2563eb; 
+            --primary-hover: #1d4ed8; 
+            --bg: #ffffff; 
+            --card: #e3effdcf;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --ring: rgba(37, 99, 235, 0.2);
+            --header-bg: #1e3a8a;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            color: var(--text-main);
+            padding: 30px 20px; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 1300px; 
+            background: var(--card); 
+            padding: 35px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05), 0 4px 6px rgba(0,0,0,0.02); 
+            animation: slideUp 0.6s ease-out;
+        }
+
+        h2 { 
+            color: var(--text-main); 
+            border-bottom: 2px solid var(--border); 
+            padding-bottom: 15px; 
+            margin-top: 0; 
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .top-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin: 20px 0; }
+        
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        input[type="file"], input[type="text"], select[multiple] { 
+            padding: 10px 12px; 
+            border: 1.5px solid var(--border); 
+            border-radius: 8px; 
+            font-size: 14px; 
+            font-family: 'Inter', sans-serif;
+            width: 100%; 
+            box-sizing: border-box; 
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--ring);
+            outline: none;
+            background-color: #ffffff;
+        }
+
+        select[multiple] { height: 130px; padding: 6px; cursor: pointer; }
+        select[multiple] option { padding: 8px 12px; margin-bottom: 4px; border-radius: 6px; transition: 0.2s; }
+        select[multiple] option:hover { background-color: #f1f5f9; }
+        select[multiple] option:checked { background: var(--primary); color: white; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .hint { font-size: 12px; color: #9ca3af; margin-top: 6px; font-style: italic; }
+        .search-box { margin-bottom: 8px; }
+
+        .buttons { display: flex; gap: 15px; margin: 30px 0; flex-wrap: wrap; }
+        button { 
+            padding: 12px 24px; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            font-size: 14px;
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+        }
+        button:hover:not(:disabled) { 
+            background: var(--primary-hover); 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
+        }
+        button:active:not(:disabled) { transform: translateY(0); }
+        button:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; color: #64748b; }
+        
+        .table-container { overflow-x: auto; margin-top: 15px; border-radius: 12px; }
+        #capture { display: inline-block; background: white; padding: 20px; border-radius: 12px; }
+        
+        table { 
+            border-collapse: collapse; 
+            width: 100%;
+            min-width: 800px; 
+            font-size: 14.5px; 
+            text-align: right;
+            animation: fadeIn 0.5s ease-out;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 0 1px #cbd5e1; 
+        }
+        
+        th, td { border: 1px solid #cbd5e1; padding: 10px 14px; }
+        th { background: #f1f5f9; font-weight: 600; text-align: center; color: var(--text-main); }
+        
+        .header-main th { 
+            background: var(--header-bg); 
+            color: white; 
+            font-size: 16px; 
+            font-weight: 700;
+            padding: 16px;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:nth-child(even) { background-color: #f8fafc; }
+        tr:hover:not(.header-main):not(.grand-total) { background-color: #eff6ff; transition: background 0.2s; }
+        
+        .row-label { text-align: left; font-weight: 600; color: var(--text-main); }
+        .grand-total { font-weight: 700; background: #e0f2fe !important; color: #0369a1; }
+        
+        #overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(5px);
+            display: none; flex-direction: column; justify-content: center; align-items: center; 
+            z-index: 1000; 
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .spinner { 
+            width: 50px; height: 50px; 
+            border: 4px solid #e2e8f0; 
+            border-top: 4px solid var(--primary); 
+            border-radius: 50%; 
+            animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite; 
+        }
+        
+        #status-msg { margin-top: 20px; font-weight: 600; color: var(--primary); font-size: 16px; letter-spacing: 0.5px; }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+<div id="overlay">
+    <div class="spinner"></div>
+    <div id="status-msg">Processing Data...</div>
+</div>
+
+<div class="container">
+    <h2>🚀 nLearn App Data Processor Developed by Aftab Malik...</h2>
+    
+    <div class="top-row">
+        <div class="form-group">
+            <label>Upload Excel File</label>
+            <input type="file" id="fileInput" accept=".xlsx, .xls, .csv">
+        </div>
+        <div class="form-group">
+            <label>Report Date (For Heading)</label>
+            <input type="text" id="dateInput" value="22 Aug 2026">
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="form-group">
+            <label>1. State</label>
+            <select id="stateSelect" multiple disabled></select>
+            <div class="hint">Hold Ctrl/Cmd to select multiple. Leave empty for ALL.</div>
+        </div>
+
+        <div class="form-group">
+            <label>2. Segment</label>
+            <select id="segmentSelect" multiple disabled></select>
+            <div class="hint">Hold Ctrl/Cmd to select multiple. Leave empty for ALL.</div>
+        </div>
+
+        <div class="form-group">
+            <label>3. Branch Type</label>
+            <select id="branchTypeSelect" multiple disabled></select>
+            <div class="hint">Extracted automatically. Leave empty for ALL.</div>
+        </div>
+
+        <div class="form-group">
+            <label>4. Search & Select Branches</label>
+            <input type="text" id="branchSearch" class="search-box" placeholder="Type to filter branch list..." disabled onkeyup="filterBranchList()">
+            <select id="branchSelect" multiple disabled></select>
+            <div class="hint">Leave empty for ALL.</div>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button id="btnProcess" onclick="processData()" disabled>Generate Table</button>
+        <button id="btnImg" onclick="downloadImage()" disabled>Download Image</button>
+        <button id="btnExcel" onclick="downloadNotDownloadedExcel()" disabled>Download Not-Downloaded Excel</button>
+    </div>
+
+    <div class="table-container">
+        <div id="capture">
+            <div id="tableOutput"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let sheetData = []; 
+    let headers = [];
+    
+    let uniqueStates = new Set();
+    let uniqueSegments = new Set();
+    let uniqueBranchTypes = new Set();
+    let uniqueBranches = new Set();
+
+    const ui = {
+        show: msg => { document.getElementById('status-msg').innerText = msg; document.getElementById('overlay').style.display = 'flex'; },
+        hide: () => document.getElementById('overlay').style.display = 'none',
+        enable: id => document.getElementById(id).disabled = false
+    };
+
+    function getColor(percent) {
+        if (percent === 100) return '#4ade80'; 
+        if (percent >= 99) return '#fcd34d';   
+        if (percent >= 98) return '#fb923c';   
+        return '#f87171';                      
+    }
+
+    function getSelectedValues(selectId) {
+        const select = document.getElementById(selectId);
+        return Array.from(select.selectedOptions).map(opt => opt.value);
+    }
+
+    function extractState(branchName) {
+        if (!branchName) return "";
+        const parts = branchName.split('-');
+        if (parts.length > 1) return parts[0].trim().toUpperCase();
+        return "UNKNOWN";
+    }
+
+    function extractBranchType(branchName) {
+        if (!branchName) return "";
+        const parts = branchName.split('-');
+        if (parts.length > 1) return parts[parts.length - 1].trim().toUpperCase();
+        return "OTHER";
+    }
+
+    /* --- NEW HELPER FUNCTION FOR ACCURATE STATUS COLUMN FINDING --- */
+    function findStatusColumnIndex() {
+        let idx = headers.findIndex(h => h.toLowerCase().includes('student download status'));
+        if (idx !== -1) return idx;
+        
+        idx = headers.findIndex(h => h.toLowerCase().includes('download status'));
+        if (idx !== -1) return idx;
+        
+        // Fallback: looking for status/download but NOT registrationstatus
+        return headers.findIndex(h => {
+            const lower = h.toLowerCase();
+            return (lower.includes('status') || lower.includes('download')) && !lower.includes('registration');
+        });
+    }
+
+    document.getElementById('fileInput').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        ui.show("Reading Excel file...");
+        
+        setTimeout(() => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array', dense: true}); 
+                    
+                    const targetSheetName = workbook.SheetNames.find(n => n.trim().toLowerCase() === 'data') || workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[targetSheetName];
+
+                    const rawArray = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+                    
+                    if (rawArray.length < 2) {
+                        alert("File appears empty after processing.");
+                        ui.hide(); return;
+                    }
+
+                    headers = rawArray[0].map(h => String(h).trim());
+                    sheetData = rawArray.slice(1); 
+
+                    populateFilters(); 
+                    
+                    ['btnProcess', 'stateSelect', 'segmentSelect', 'branchTypeSelect', 'branchSearch', 'branchSelect'].forEach(id => ui.enable(id));
+                } catch (err) {
+                    alert("Error processing file: " + err.message);
+                }
+                ui.hide();
+            };
+            reader.readAsArrayBuffer(file);
+        }, 100);
+    });
+
+    function populateFilters() {
+        const stateIdx = headers.findIndex(h => h.toLowerCase().includes('state'));
+        const segIdx = headers.findIndex(h => h.toLowerCase().includes('segment'));
+        const branchIdx = headers.findIndex(h => h.toLowerCase().includes('branch'));
+
+        uniqueStates.clear();
+        uniqueSegments.clear();
+        uniqueBranchTypes.clear();
+        uniqueBranches.clear();
+
+        for (let i = 0; i < sheetData.length; i++) {
+            const row = sheetData[i];
+            
+            let bName = "";
+            if (branchIdx !== -1 && row[branchIdx]) {
+                bName = String(row[branchIdx]).trim();
+                uniqueBranches.add(bName);
+                uniqueBranchTypes.add(extractBranchType(bName));
+            }
+
+            if (stateIdx !== -1 && row[stateIdx]) {
+                uniqueStates.add(String(row[stateIdx]).trim().toUpperCase());
+            } else if (bName && bName.includes('-')) {
+                uniqueStates.add(extractState(bName));
+            }
+
+            if (segIdx !== -1 && row[segIdx]) {
+                uniqueSegments.add(String(row[segIdx]).trim().toUpperCase());
+            }
+        }
+
+        const fillSelect = (id, set) => {
+            const el = document.getElementById(id);
+            el.innerHTML = '';
+            Array.from(set).sort().forEach(val => {
+                if(val) el.innerHTML += `<option value="${val}">${val}</option>`;
+            });
+        };
+
+        fillSelect('stateSelect', uniqueStates);
+        fillSelect('segmentSelect', uniqueSegments);
+        fillSelect('branchTypeSelect', uniqueBranchTypes);
+        fillSelect('branchSelect', uniqueBranches);
+    }
+
+    function filterBranchList() {
+        const input = document.getElementById('branchSearch').value.toLowerCase();
+        const options = document.getElementById('branchSelect').options;
+        for (let i = 0; i < options.length; i++) {
+            const txt = options[i].text.toLowerCase();
+            options[i].style.display = txt.includes(input) ? '' : 'none';
+        }
+    }
+
+    function isStatusNotDownloaded(statusStr) {
+        const s = statusStr.toUpperCase();
+        return s.includes('NOT') || s === 'NO' || s.includes('PENDING') || s === 'FALSE';
+    }
+
+    function processData() {
+        if (sheetData.length === 0) return;
+        ui.show("Calculating Download Statistics...");
+
+        setTimeout(() => {
+            const stateIdx = headers.findIndex(h => h.toLowerCase().includes('state'));
+            const segIdx = headers.findIndex(h => h.toLowerCase().includes('segment'));
+            const branchIdx = headers.findIndex(h => h.toLowerCase().includes('branch'));
+            
+            /* --- UPDATED: Uses the new helper function --- */
+            const statusIdx = findStatusColumnIndex();
+
+            const selStates = getSelectedValues('stateSelect');
+            const selSegments = getSelectedValues('segmentSelect');
+            const selTypes = getSelectedValues('branchTypeSelect');
+            const selBranches = getSelectedValues('branchSelect');
+
+            let summary = {};
+            let tDownloaded = 0, tNotDownloaded = 0;
+
+            for (let i = 0; i < sheetData.length; i++) {
+                const row = sheetData[i];
+                
+                const rBranch = branchIdx !== -1 ? String(row[branchIdx]).trim() : "Unknown";
+                
+                let rState = "";
+                if (stateIdx !== -1 && row[stateIdx]) {
+                    rState = String(row[stateIdx]).trim().toUpperCase();
+                } else {
+                    rState = extractState(rBranch);
+                }
+
+                const rSeg = segIdx !== -1 ? String(row[segIdx]).trim().toUpperCase() : "";
+                const rType = extractBranchType(rBranch);
+                const rStatus = statusIdx !== -1 ? String(row[statusIdx]).trim() : "";
+
+                if (selStates.length > 0 && !selStates.includes(rState)) continue;
+                if (selSegments.length > 0 && !selSegments.includes(rSeg)) continue;
+                if (selTypes.length > 0 && !selTypes.includes(rType)) continue;
+                if (selBranches.length > 0 && !selBranches.includes(rBranch)) continue;
+
+                if (!summary[rBranch]) summary[rBranch] = { downloaded: 0, notDownloaded: 0 };
+
+                if (isStatusNotDownloaded(rStatus)) {
+                    summary[rBranch].notDownloaded++;
+                    tNotDownloaded++;
+                } else {
+                    summary[rBranch].downloaded++;
+                    tDownloaded++;
+                }
+            }
+
+            let results = Object.keys(summary).map(b => {
+                const d = summary[b].downloaded;
+                const nd = summary[b].notDownloaded;
+                const total = d + nd;
+                return { branch: b, d, nd, total, pct: total === 0 ? 0 : Math.round((d / total) * 100) };
+            }).filter(item => item.total > 0);
+
+            results.sort((a, b) => b.pct - a.pct || b.total - a.total); 
+            
+            if (results.length === 0) alert("No data matched your selected filters.");
+            
+            renderTable(results, tDownloaded, tNotDownloaded, selSegments);
+
+            ui.enable('btnImg');
+            ui.enable('btnExcel');
+            ui.hide();
+        }, 50);
+    }
+
+    function renderTable(data, totalD, totalND, selSegments) {
+        let segTitleText = selSegments.length > 0 ? selSegments.join(', ') : 'All Segments';
+        const dateText = document.getElementById('dateInput').value;
+
+        let appName = "nLearn App";
+        if (segTitleText.toUpperCase().includes('KIDS') || segTitleText.toUpperCase().includes('CHAMP')) {
+            appName = "nLearn kids App";
+        }
+
+        let html = `<table>
+            <tr class="header-main"><th colspan="5">${segTitleText} Segment ${appName} Not Downloads Data ${dateText}</th></tr>
+            <tr><th>Row Labels</th><th>Download</th><th>Not Download</th><th>Grand Total</th><th>%</th></tr>`;
+
+        data.forEach(r => {
+            html += `<tr>
+                <td class="row-label">${r.branch}</td>
+                <td>${r.d > 0 ? r.d : ''}</td>
+                <td>${r.nd > 0 ? r.nd : ''}</td>
+                <td>${r.total}</td>
+                <td style="background-color: ${getColor(r.pct)}; color: #0f172a; font-weight: 700;">${r.pct}%</td>
+            </tr>`;
+        });
+
+        const gTotal = totalD + totalND;
+        const gPct = gTotal === 0 ? 0 : Math.round((totalD / gTotal) * 100);
+
+        html += `<tr class="grand-total">
+            <td class="row-label">Grand Total</td>
+            <td>${totalD}</td><td>${totalND > 0 ? totalND : ''}</td><td>${gTotal}</td>
+            <td style="background-color: ${getColor(gPct)}; color: #0f172a;">${gPct}%</td>
+        </tr></table>`;
+
+        document.getElementById('tableOutput').innerHTML = html;
+    }
+
+    function downloadImage() {
+        ui.show("Capturing High-Res Image...");
+        setTimeout(() => {
+            html2canvas(document.getElementById('capture'), { scale: 2, backgroundColor: null }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `nLearn_Stats_${document.getElementById('dateInput').value.replace(/ /g, '_')}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                ui.hide();
+            });
+        }, 100);
+    }
+
+    function downloadNotDownloadedExcel() {
+        ui.show("Filtering Not-Downloaded Data...");
+        setTimeout(() => {
+            const stateIdx = headers.findIndex(h => h.toLowerCase().includes('state'));
+            const segIdx = headers.findIndex(h => h.toLowerCase().includes('segment'));
+            const branchIdx = headers.findIndex(h => h.toLowerCase().includes('branch'));
+            
+            /* --- UPDATED: Uses the new helper function --- */
+            const statusIdx = findStatusColumnIndex();
+            
+            const selStates = getSelectedValues('stateSelect');
+            const selSegments = getSelectedValues('segmentSelect');
+            const selTypes = getSelectedValues('branchTypeSelect');
+            const selBranches = getSelectedValues('branchSelect');
+
+            let filteredArray = [headers]; 
+            
+            for (let i = 0; i < sheetData.length; i++) {
+                const row = sheetData[i];
+                
+                const rBranch = branchIdx !== -1 ? String(row[branchIdx]).trim() : "";
+                
+                let rState = "";
+                if (stateIdx !== -1 && row[stateIdx]) {
+                    rState = String(row[stateIdx]).trim().toUpperCase();
+                } else {
+                    rState = extractState(rBranch);
+                }
+
+                const rSeg = segIdx !== -1 ? String(row[segIdx]).trim().toUpperCase() : "";
+                const rType = extractBranchType(rBranch);
+                const rStatus = statusIdx !== -1 ? String(row[statusIdx]).trim() : "";
+
+                if (isStatusNotDownloaded(rStatus)) {
+                    if (selStates.length > 0 && !selStates.includes(rState)) continue;
+                    if (selSegments.length > 0 && !selSegments.includes(rSeg)) continue;
+                    if (selTypes.length > 0 && !selTypes.includes(rType)) continue;
+                    if (selBranches.length > 0 && !selBranches.includes(rBranch)) continue;
+                    
+                    filteredArray.push(row);
+                }
+            }
+
+            if (filteredArray.length === 1) {
+                alert("No Not-Downloaded records found for selected filters.");
+                ui.hide(); return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(filteredArray); 
+            XLSX.utils.book_append_sheet(wb, ws, "Not Downloaded Data");
+            XLSX.writeFile(wb, `Filtered_Not_Downloaded.xlsx`);
+            ui.hide();
+        }, 50);
+    }
+</script>
+
+</body>
+</html>
